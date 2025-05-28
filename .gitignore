@@ -1,5 +1,4 @@
 .idea
 __init__.py
 __pycache__
-src/ai/data/*
 .DS_Store

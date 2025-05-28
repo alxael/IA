@@ -2,14 +2,17 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 import torchvision.transforms as transforms
-import matplotlib.pyplot as plt
-import numpy as np
+import pandas as pd
 
 from torch.cuda import is_available
 from torch.utils.data import DataLoader
 
-from dataset import TrainingDataset, TestDataset
+from dataset import TrainingDataset
 from network import CNN
+
+print("Running on CUDA\n" if is_available() else "Running on CPU\n")
+
+device = torch.device("cuda" if is_available() else "cpu")
 
 batch_size = 64
 
@@ -28,19 +31,17 @@ validation_data = TrainingDataset("./data/validation.csv", "./data/validation", 
 validation_loader = DataLoader(validation_data, batch_size=batch_size, shuffle=True, num_workers=0)
 print("Finished loading validation data!\n")
 
-print("Running on CUDA\n" if is_available() else "Running on CPU\n")
-
-device = torch.device("cuda" if is_available() else "cpu")
 model = CNN().to(device)
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0)
-
+optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0.005)
 
 def train_model(model, train_loader, validation_loader, epochs, folds):
     best_accuracy = 0.0
 
+    results = []
+
     training_data_fold_size = len(training_data) // folds
-    validation_data_fold_size = len(validation_data) // folds
+    validation_data_size = len(validation_data)
 
     for epoch in range(epochs):
         for fold in range(folds):
@@ -81,25 +82,31 @@ def train_model(model, train_loader, validation_loader, epochs, folds):
                     total += labels.size(0)
                     correct += (predicted == labels).sum().item()
 
-                    if index == validation_data_fold_size:
-                        break
-
             # Calculate metrics
-            epoch_loss = running_loss / len(train_loader.dataset)
-            validation_loss = validation_loss / len(validation_loader.dataset)
+            training_loss = running_loss / training_data_fold_size
+            validation_loss = validation_loss / validation_data_size
             validation_accuracy = correct / total
 
-            print(f"Train Loss: {epoch_loss:.4f}")
+            print(f"Training Loss: {training_loss:.4f}")
             print(f"Validation Loss: {validation_loss:.4f}")
             print(f"Validation Accuracy: {validation_accuracy * 100:.2f}%")
             print("\n")
 
+            results.append({
+                'epoch': epoch,
+                'fold': fold,
+                'training_loss': training_loss,
+                'validation_loss': validation_loss,
+                'validation_accuracy': validation_accuracy
+            })
+
             # Save best model
             if validation_accuracy > best_accuracy:
                 best_accuracy = validation_accuracy
-                torch.save(model.state_dict(), 'best_model.pth')
+                torch.save(model.state_dict(), 'results/best_model.pth')
 
-    print(f"Best Validation Accuracy: {best_accuracy:.4f}")
+    df = pd.DataFrame(results)
+    df.to_csv('results/training_log.csv', index=False)
 
 
-train_model(model, train_loader, validation_loader, 5, 10)
+train_model(model, train_loader, validation_loader, 5, 4)

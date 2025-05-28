@@ -37,10 +37,9 @@ class TestDataset(Dataset):
     def __getitem__(self, idx):
         row = self.data.iloc[idx]
         image_id = row['image_id']
-        label = int(row['label'])
         img_path = os.path.join(self.images_dir, f"{image_id}.png")
         image = Image.open(img_path).convert('RGB')
 
         if self.transform:
             image = self.transform(image)
-        return image, label
+        return image, image_id
