@@ -1,4 +1,6 @@
 .idea
 __init__.py
 __pycache__
+data
+results
 .DS_Store
