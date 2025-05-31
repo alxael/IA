@@ -11,40 +11,6 @@ from torch.utils.data import DataLoader
 from dataset import TrainingDataset
 from network import CNN, SimplifiedCNN, LinearNN, SimplifiedLinearNN
 
-print("Running on CUDA\n" if is_available() else "Running on CPU\n")
-
-device = torch.device("cuda" if is_available() else "cpu")
-
-# models = {'cnn': CNN, 'scnn': SimplifiedCNN, 'lnn': LinearNN, 'slnn': SimplifiedLinearNN}
-
-# transformers = {
-#     'simple': transforms.ToTensor(),
-#     'image_net': transforms.Compose(
-#         [transforms.ToTensor(),
-#          transforms.Normalize(mean=[0.485, 0.456, 0.406],
-#                               std=[0.229, 0.224, 0.225])])  # ImageNet Normalization
-# }
-
-# epochs = 300
-
-# batch_sizes = [32, 64]
-
-# optimizers = {
-#     'adam': {
-#         'lr': [0.001, 0.0015],  # lower for larger batches
-#         'weight_decay': [0.0001, 0.0005, 0.001],  # higher values in case of overfitting
-#     },
-#     'adamw': {
-#         'lr': [0.0003, 0.0005],  # smaller for training from scratch
-#         'weight_decay': [0.005, 0.01, 0.05]  # smaller for CNNs
-#     },
-#     'sgd': {
-#         'lr': [0.005, 0.01],  # try faster learning, watch carefully for instability
-#         'momentum': [0.85, 0.9, 0.95],  # test different convergence behaviours
-#         'weight_decay': [0.0005, 0.001, 0.005],  # attempt to prevent overfitting
-#     }
-# }
-
 models = {'cnn': CNN}
 
 transformers = {
@@ -61,17 +27,17 @@ batch_sizes = [32, 64]
 
 optimizers = {
     'adam': {
-        'lr': [0.0015],  # lower for larger batches
-        'weight_decay': [0.0001],  # higher values in case of overfitting
+        'lr': [0.0001],  # lower for larger batches
+        'weight_decay': [0.001],  # higher values in case of overfitting
     },
     'adamw': {
-        'lr': [0.0003],  # smaller for training from scratch
+        'lr': [0.0005],  # smaller for training from scratch
         'weight_decay': [0.01]  # smaller for CNNs
     },
     'sgd': {
-        'lr': [0.005],  # try faster learning, watch carefully for instability
+        'lr': [0.05],  # try faster learning, watch carefully for instability
         'momentum': [0.9],  # test different convergence behaviours
-        'weight_decay': [0.001],  # attempt to prevent overfitting
+        'weight_decay': [0.005],  # attempt to prevent overfitting
     }
 }
 
@@ -94,7 +60,7 @@ def train_model(model_id, model, transformer, epochs, batch_size, optimizer_type
     elif optimizer_type == 'adamw':
         optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     elif optimizer_type == 'sgd':
-        optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=momentum)
+        optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=momentum, nesterov=True)
 
     best_accuracy = 0.0
 
@@ -155,8 +121,8 @@ def train_model(model_id, model, transformer, epochs, batch_size, optimizer_type
             best_accuracy = validation_accuracy
             torch.save(model.state_dict(), f"results/models/model_{model_id}.pth")
 
-        data_file = pd.DataFrame(results)
-        data_file.to_csv(f"results/data/model_{model_id}.csv", index=False)
+    data_file = pd.DataFrame(results)
+    data_file.to_csv(f"results/data/model_{model_id}.csv", index=False)
 
 
 if __name__ == '__main__':
@@ -173,9 +139,8 @@ if __name__ == '__main__':
                     for lr in lrs:
                         for weight_decay in weight_decays:
                             for momentum in momentums:
-                                model_id = len(models_data) + 1
                                 models_data.append({
-                                    'model_id': model_id,
+                                    'model_id': len(models_data) + 1,
                                     'model': model,
                                     'transformer': transformer,
                                     'epochs': epochs,
@@ -186,7 +151,7 @@ if __name__ == '__main__':
                                     'momentum': momentum
                                 })
                                 process = mp.Process(target=train_model, args=(
-                                    model_id,
+                                    len(models_data),
                                     models[model],
                                     transformers[transformer],
                                     epochs,
