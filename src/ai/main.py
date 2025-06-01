@@ -11,10 +11,14 @@ from torch.utils.data import DataLoader
 from dataset import TrainingDataset
 from network import CNN, SimplifiedCNN, LinearNN, SimplifiedLinearNN
 
-models = {'cnn': CNN}
+models = {
+    # 'cnn': CNN,
+    # 'scnn': SimplifiedCNN,
+    # 'lnn': LinearNN,
+    'slnn': SimplifiedLinearNN
+}
 
 transformers = {
-    'simple': transforms.ToTensor(),
     'image_net': transforms.Compose(
         [transforms.ToTensor(),
          transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -23,7 +27,7 @@ transformers = {
 
 epochs = 300
 
-batch_sizes = [32, 64]
+batch_sizes = [32]
 
 optimizers = {
     'adam': {
@@ -35,7 +39,7 @@ optimizers = {
         'weight_decay': [0.01]  # smaller for CNNs
     },
     'sgd': {
-        'lr': [0.05],  # try faster learning, watch carefully for instability
+        'lr': [0.005],  # try faster learning, watch carefully for instability
         'momentum': [0.9],  # test different convergence behaviours
         'weight_decay': [0.005],  # attempt to prevent overfitting
     }
@@ -121,8 +125,12 @@ def train_model(model_id, model, transformer, epochs, batch_size, optimizer_type
             best_accuracy = validation_accuracy
             torch.save(model.state_dict(), f"results/models/model_{model_id}.pth")
 
-    data_file = pd.DataFrame(results)
-    data_file.to_csv(f"results/data/model_{model_id}.csv", index=False)
+            models_file = pd.read_csv('results/models.csv')
+            models_file.loc[model_id - 1, 'performance'] = best_accuracy
+            models_file.to_csv('results/models.csv', index=False)
+
+        data_file = pd.DataFrame(results)
+        data_file.to_csv(f"results/data/model_{model_id}.csv", index=False)
 
 
 if __name__ == '__main__':
@@ -148,7 +156,8 @@ if __name__ == '__main__':
                                     'optimizer': optimizer,
                                     'learning_rate': lr,
                                     'weight_decay': weight_decay,
-                                    'momentum': momentum
+                                    'momentum': momentum,
+                                    'performance': 0.0
                                 })
                                 process = mp.Process(target=train_model, args=(
                                     len(models_data),
