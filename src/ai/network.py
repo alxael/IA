@@ -69,13 +69,19 @@ class LinearNN(nn.Module):
 
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(3 * 100 * 100, 4096),
+            nn.Linear(3 * 100 * 100, 2 ** 14),
             nn.ReLU(),
-            nn.Linear(4096, 1024),
+            nn.Linear(2 ** 14, 2 ** 12),
             nn.ReLU(),
-            nn.Linear(1024, 256),
+            nn.Linear(2 ** 12, 2 ** 10),
             nn.ReLU(),
-            nn.Linear(256, 5)
+            nn.Linear(2 ** 10, 2 ** 8),
+            nn.ReLU(),
+            nn.Linear(2 ** 8, 2 ** 6),
+            nn.ReLU(),
+            nn.Linear(2 ** 6, 2 ** 4),
+            nn.ReLU(),
+            nn.Linear(2 ** 4, 5),
         )
 
     def forward(self, x):

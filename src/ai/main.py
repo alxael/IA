@@ -12,10 +12,10 @@ from dataset import TrainingDataset
 from network import CNN, SimplifiedCNN, LinearNN, SimplifiedLinearNN
 
 models = {
-    # 'cnn': CNN,
+    'cnn': CNN,
     # 'scnn': SimplifiedCNN,
     # 'lnn': LinearNN,
-    'slnn': SimplifiedLinearNN
+    # 'slnn': SimplifiedLinearNN
 }
 
 transformers = {
@@ -31,18 +31,18 @@ batch_sizes = [32]
 
 optimizers = {
     'adam': {
-        'lr': [0.0001],  # lower for larger batches
-        'weight_decay': [0.001],  # higher values in case of overfitting
+        'lr': [0.001],  # lower for larger batches
+        'weight_decay': [0.0001],  # higher values in case of overfitting
     },
-    'adamw': {
-        'lr': [0.0005],  # smaller for training from scratch
-        'weight_decay': [0.01]  # smaller for CNNs
-    },
-    'sgd': {
-        'lr': [0.005],  # try faster learning, watch carefully for instability
-        'momentum': [0.9],  # test different convergence behaviours
-        'weight_decay': [0.005],  # attempt to prevent overfitting
-    }
+    # 'adamw': {
+    #     'lr': [0.0005],  # smaller for training from scratch
+    #     'weight_decay': [0.01]  # smaller for CNNs
+    # },
+    # 'sgd': {
+    #     'lr': [0.005],  # try faster learning, watch carefully for instability
+    #     'momentum': [0.9],  # test different convergence behaviours
+    #     'weight_decay': [0.005],  # attempt to prevent overfitting
+    # }
 }
 
 
@@ -53,7 +53,7 @@ def train_model(model_id, model, transformer, epochs, batch_size, optimizer_type
     validation_data = TrainingDataset("./data/validation.csv", "./data/validation", transform=transformer)
     validation_loader = DataLoader(validation_data, batch_size=batch_size, shuffle=True, num_workers=0)
 
-    device = torch.device(f'cuda:{model_id}' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     model = model().to(device)
     criterion = nn.CrossEntropyLoss()
@@ -65,6 +65,8 @@ def train_model(model_id, model, transformer, epochs, batch_size, optimizer_type
         optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     elif optimizer_type == 'sgd':
         optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=momentum, nesterov=True)
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='min', factor=0.1, patience=5)
 
     best_accuracy = 0.0
 
@@ -113,11 +115,14 @@ def train_model(model_id, model, transformer, epochs, batch_size, optimizer_type
         validation_loss = validation_loss / validation_data_size
         validation_accuracy = correct / total
 
+        scheduler.step(validation_loss)
+
         results.append({
-            'epoch': epoch,
+            'epoch': epoch + 1,
             'training_loss': training_loss,
             'validation_loss': validation_loss,
-            'validation_accuracy': validation_accuracy
+            'validation_accuracy': validation_accuracy,
+            'learning_rate': optimizer.param_groups[0]['lr']
         })
 
         # Save best model
