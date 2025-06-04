@@ -23,11 +23,16 @@ class CNN(nn.Module):
 
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(128 * 12 * 12, 2048),
+            nn.Dropout(0.3),
+            nn.Linear(128 * 12 * 12, 4096),
             nn.ReLU(),
-            nn.Linear(2048, 256),
+            nn.Dropout(0.2),
+            nn.Linear(4096, 512),
             nn.ReLU(),
-            nn.Linear(256, 5)
+            nn.Dropout(0.1),
+            nn.Linear(512, 32),
+            nn.ReLU(),
+            nn.Linear(32, 5)
         )
 
     def forward(self, x):

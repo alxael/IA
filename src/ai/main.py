@@ -27,22 +27,22 @@ transformers = {
 
 epochs = 300
 
-batch_sizes = [32]
+batch_sizes = [50]
 
 optimizers = {
     'adam': {
         'lr': [0.001],  # lower for larger batches
-        'weight_decay': [0.0001],  # higher values in case of overfitting
+        'weight_decay': [0.001],  # higher values in case of overfitting
     },
-    # 'adamw': {
-    #     'lr': [0.0005],  # smaller for training from scratch
-    #     'weight_decay': [0.01]  # smaller for CNNs
-    # },
-    # 'sgd': {
-    #     'lr': [0.005],  # try faster learning, watch carefully for instability
-    #     'momentum': [0.9],  # test different convergence behaviours
-    #     'weight_decay': [0.005],  # attempt to prevent overfitting
-    # }
+    'adamw': {
+        'lr': [0.001],  # smaller for training from scratch
+        'weight_decay': [0.001]  # smaller for CNNs
+    },
+    'sgd': {
+        'lr': [0.001],  # try faster learning, watch carefully for instability
+        'momentum': [0.9],  # test different convergence behaviours
+        'weight_decay': [0.001],  # attempt to prevent overfitting
+    }
 }
 
 
@@ -66,7 +66,7 @@ def train_model(model_id, model, transformer, epochs, batch_size, optimizer_type
     elif optimizer_type == 'sgd':
         optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=momentum, nesterov=True)
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='min', factor=0.1, patience=5)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='min', factor=0.1, patience=15)
 
     best_accuracy = 0.0
 
@@ -81,11 +81,12 @@ def train_model(model_id, model, transformer, epochs, batch_size, optimizer_type
         # Training phase
         model.train()
         running_loss = 0.0
-        for images, labels in train_loader:
+        for index, [images, labels] in enumerate(train_loader, 1):
             images, labels = images.to(device), labels.to(device)
 
             optimizer.zero_grad()
             outputs = model(images)
+
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
@@ -103,7 +104,7 @@ def train_model(model_id, model, transformer, epochs, batch_size, optimizer_type
             for images, labels in validation_loader:
                 images, labels = images.to(device), labels.to(device)
                 outputs = model(images)
-                loss = criterion(outputs, labels)
+                loss = criterion(outputs, torch.nn.functional.one_hot(labels, num_classes=5).float())
 
                 validation_loss += loss.item() * images.size(0)
                 _, predicted = torch.max(outputs.data, 1)
