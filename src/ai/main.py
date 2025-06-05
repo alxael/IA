@@ -5,17 +5,13 @@ import torch.multiprocessing as mp
 import torchvision.transforms as transforms
 import pandas as pd
 
-from torch.cuda import is_available
 from torch.utils.data import DataLoader
 
 from dataset import TrainingDataset
-from network import CNN, SimplifiedCNN, LinearNN, SimplifiedLinearNN
+from network import CNN
 
 models = {
     'cnn': CNN,
-    # 'scnn': SimplifiedCNN,
-    # 'lnn': LinearNN,
-    # 'slnn': SimplifiedLinearNN
 }
 
 transformers = {
@@ -32,17 +28,8 @@ batch_sizes = [50]
 optimizers = {
     'adam': {
         'lr': [0.001],  # lower for larger batches
-        'weight_decay': [0.001],  # higher values in case of overfitting
+        'weight_decay': [0.001, 0.001, 0.001],  # higher values in case of overfitting
     },
-    'adamw': {
-        'lr': [0.001],  # smaller for training from scratch
-        'weight_decay': [0.001]  # smaller for CNNs
-    },
-    'sgd': {
-        'lr': [0.001],  # try faster learning, watch carefully for instability
-        'momentum': [0.9],  # test different convergence behaviours
-        'weight_decay': [0.001],  # attempt to prevent overfitting
-    }
 }
 
 
@@ -66,7 +53,7 @@ def train_model(model_id, model, transformer, epochs, batch_size, optimizer_type
     elif optimizer_type == 'sgd':
         optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=momentum, nesterov=True)
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='min', factor=0.1, patience=15)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='min', factor=0.5, patience=10)
 
     best_accuracy = 0.0
 

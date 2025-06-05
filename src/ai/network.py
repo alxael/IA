@@ -23,10 +23,10 @@ class CNN(nn.Module):
 
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            nn.Dropout(0.3),
+            nn.Dropout(0.5),
             nn.Linear(128 * 12 * 12, 4096),
             nn.ReLU(),
-            nn.Dropout(0.2),
+            nn.Dropout(0.3),
             nn.Linear(4096, 512),
             nn.ReLU(),
             nn.Dropout(0.1),
@@ -57,9 +57,11 @@ class SimplifiedCNN(nn.Module):
 
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(64 * 25 * 25, 256),
+            nn.Linear(64 * 25 * 25, 3072),
             nn.ReLU(),
-            nn.Linear(256, 5)
+            nn.Linear(3072, 384),
+            nn.ReLU(),
+            nn.Linear(384, 5)
         )
 
     def forward(self, x):
