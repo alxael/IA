@@ -28,16 +28,29 @@ test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=True, num_wor
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-model = models['cnn']().to(device)
-model.load_state_dict(torch.load('results/models/model_2.pth'))
-model.eval()
+model_count = 2
+final_models = []
+
+indices = [1, 2]
+for index in indices:
+    model = models['cnn']().to(device)
+    model.load_state_dict(torch.load(f"results-1/models/model_{index}.pth"))
+    model.eval()
+    final_models.append(model)
 
 answers = []
 with torch.no_grad():
     for images, image_ids in test_loader:
         images = images.to(device)
-        outputs = model(images)
 
+        outputs = None
+        for model in final_models:
+            if outputs is None:
+                outputs = model(images)
+            else:
+                outputs = outputs + model(images)
+        outputs = outputs / model_count
+        
         _, predicted = torch.max(outputs.data, 1)
         for label, image_id in zip(predicted, image_ids):
             answers.append({
