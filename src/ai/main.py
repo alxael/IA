@@ -53,7 +53,7 @@ def train_model(model_id, model, transformer, epochs, batch_size, optimizer_type
     elif optimizer_type == 'sgd':
         optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=momentum, nesterov=True)
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='min', factor=0.7, patience=15)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='min', factor=0.5, patience=15)
 
     best_accuracy = 0.0
 
