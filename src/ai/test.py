@@ -28,13 +28,13 @@ test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=True, num_wor
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-model_count = 5
+model_count = 2
 final_models = []
 
-indices = [1, 2, 3, 4, 5]
+indices = [1, 2]
 for index in indices:
     model = models['cnn']().to(device)
-    model.load_state_dict(torch.load(f"results-2/models/model_{index}.pth"))
+    model.load_state_dict(torch.load(f"results/models/model_{index}.pth"))
     model.eval()
     final_models.append(model)
 

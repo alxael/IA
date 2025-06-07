@@ -21,15 +21,20 @@ class CNN(nn.Module):
             nn.Conv2d(128, 256, kernel_size=3, padding=1),
             nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
-            nn.AdaptiveAvgPool2d((4, 4))
+            nn.AdaptiveAvgPool2d((4, 4)),
+
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(inplace=True),
+            nn.AdaptiveAvgPool2d((2, 2))
         )
 
         self.classifier = nn.Sequential(
             nn.Dropout(0.5),
-            nn.Linear(256 * 4 * 4, 4096),
+            nn.Linear(512 * 2 * 2, 2048),
             nn.ReLU(),
             nn.Dropout(0.3),
-            nn.Linear(4096, 512),
+            nn.Linear(2048, 512),
             nn.ReLU(),
             nn.Dropout(0.1),
             nn.Linear(512, 32),
